@@ -2,10 +2,11 @@ import supervision as sv
 from ultralytics import YOLO
 from tqdm.autonotebook import tqdm
 from trace_annotator import TraceAnnotator
-
-yolo = YOLO('models/yolov8l.pt')
+import params
 
 path = 'videos/remco-baggage.mov'
+
+yolo = YOLO(params.MODEL)
 
 frame_gen = sv.get_video_frames_generator(path)
 video_info = sv.VideoInfo.from_video_path(path)
