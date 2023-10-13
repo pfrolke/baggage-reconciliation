@@ -11,7 +11,10 @@ device = "mps" if params.USE_GPU and torch.backends.mps.is_available() else "cpu
 device = "cuda" if params.USE_GPU and torch.cuda.is_available() else device
 print(device)
 
-yolo = YOLO(params.MODEL).to(device)
+
+# yolo = YOLO(params.MODEL).to(device)
+# If "AttributeError: 'NoneType' object has no attribute 'names'" -> use next line
+yolo = YOLO(params.NANO_MODEL)
 
 filter_classes = [
     c for c in yolo.names.keys() if c not in params.YOLO_BLOCKLIST]
@@ -25,8 +28,11 @@ box_annotator = sv.BoxAnnotator(
 
 
 def process_frame(frame):
-    # object detection & tracking
+    # object detection & tracking - block list
     yolo_result = yolo(frame, verbose=False, classes=filter_classes)[0]
+    
+    # # object detection & tracking - only suitcases and bags
+    # yolo_result = yolo(frame, verbose=False, classes=(24, 26, 28))[0]
 
     dets = sv.Detections.from_ultralytics(yolo_result)
     dets = tracker.update_with_detections(dets)
