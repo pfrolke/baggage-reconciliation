@@ -1,4 +1,4 @@
-MODEL = 'models/yolov8n.pt'
+MODEL = 'models/yolov8l.pt'
 TRACKING_BUFFER = 200
 USE_GPU = True
 BOX_THICKNESS = 4

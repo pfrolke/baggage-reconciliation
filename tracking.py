@@ -62,13 +62,6 @@ def process_cam():
 
         frame, dets = process_frame(frame)
 
-        # show frame
-        if __name__ == '__main__':
-            cv2.imshow('BAG TRACKER 9000', frame)
-
-            if cv2.waitKey(0) & 0xFF == ord('q'):
-                break
-
         yield frame, dets
 
     cap.release()

@@ -78,6 +78,9 @@ def update_bags(xyxy, bag_ids):
     for bag_id in bags:
         bags[bag_id].visible = bag_id in bag_ids
 
+    if xyxy is None or bag_ids is None:
+        return
+
     for bag_id, (x1, y1, x2, y2) in zip(bag_ids, xyxy):
         pos = int(x1)
         size = int(abs(x2 - x1))
@@ -94,11 +97,8 @@ def update_bags(xyxy, bag_ids):
 def track():
     global annotated_frame
 
-    # for annotated_frame, dets in tracking.process_video('videos/baggage-video.mp4'):
-    for annotated_frame, dets in tracking.process_cam():
-
-        if dets.xyxy is None or dets.tracker_id is None:
-            continue
+    for annotated_frame, dets in tracking.process_video('videos/test_video.mov'):
+        # for annotated_frame, dets in tracking.process_cam():
 
         if not run:
             return
