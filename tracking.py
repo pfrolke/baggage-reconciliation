@@ -13,6 +13,9 @@ print(device)
 
 yolo = YOLO(params.MODEL).to(device)
 
+filter_classes = [
+    c for c in yolo.names.keys() if c not in params.YOLO_BLOCKLIST]
+
 # setup tracker & annotator
 tracker = sv.ByteTrack(track_buffer=params.TRACKING_BUFFER)
 trace_annotator = sv.TraceAnnotator(
@@ -23,7 +26,7 @@ box_annotator = sv.BoxAnnotator(
 
 def process_frame(frame):
     # object detection & tracking
-    yolo_result = yolo(frame, verbose=False, classes=(24, 26, 28))[0]
+    yolo_result = yolo(frame, verbose=False, classes=filter_classes)[0]
 
     dets = sv.Detections.from_ultralytics(yolo_result)
     dets = tracker.update_with_detections(dets)
@@ -80,5 +83,11 @@ def process_video(path):
 
 
 if __name__ == '__main__':
-    process_cam()
+    # for annotated_frame, dets in process_video('videos/test_video.mov'):
+    for annotated_frame, dets in process_cam():
+        cv2.imshow('BAG TRACKER 9000', annotated_frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
     cv2.destroyAllWindows()
