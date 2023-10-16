@@ -3,9 +3,11 @@ import params
 import random
 import tracking
 import threading
+import colour_picker
 import cv2
 import scipy
 import numpy as np
+from PIL import Image
 
 # # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
 # import os
@@ -41,6 +43,11 @@ BAG_COLOR_PER_TYPE = {
 }
 
 bags = {}
+
+brown_lower = np.array([0,100,20])
+brown_upper = np.array([30,255,200])
+yellow_lower = np.array([31,100,100])
+yellow_upper = np.array([50,255,255])
 
 allowed_missed_frames = 10
 annotated_frame = None
@@ -144,9 +151,20 @@ def update_bags(xyxy, bag_ids):
             bags[bag_id].trajectory.append(est_pos)
             
         else:
-            bag_type = random.choice(BAG_TYPES[1:len(BAG_TYPES)])
-            bag_color = BAG_COLOR_PER_TYPE[bag_type]
-            bags[bag_id] = Bag(pos, size, bag_type, bag_color)
+            peak_colour = colour_picker.colour_picker(annotated_frame[int(y1):int(min((y2-y1), annotated_frame.shape[1])), int(x1):int(min((x2-x1), annotated_frame.shape[0]))])
+            print(peak_colour)
+            if peak_colour is not None:
+                if (yellow_lower[0] <= peak_colour[0] <= yellow_upper[0]):
+                    bag_type = 'PRIO'
+                elif (brown_lower[0] <= peak_colour[0] <= brown_upper[0]):
+                    bag_type = 'ECO'
+                else:
+                    bag_type = 'TRF'
+                    
+                # bag_type = random.choice(BAG_TYPES[1:len(BAG_TYPES)])
+                bag_color = BAG_COLOR_PER_TYPE[bag_type]
+                bags[bag_id] = Bag(pos, size, bag_type, bag_color)
+            
             
 
 def track():
