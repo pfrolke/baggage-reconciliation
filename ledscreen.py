@@ -20,6 +20,7 @@ class Bag:
         self.colour = colour
         self.visible = visible
         self.missed_frames = 0
+        self.detected_frames = 0
 
 
 pygame.init()
@@ -103,9 +104,11 @@ def update_bags(xyxy, pred_bag_ids):
         if pred_has_bag(bag_id):
             # bag predicted
             bag.missed_frames = 0
+            bag.detected_frames += 1
 
             # visible if type is selected
-            bag.visible = BAG_TYPES[BAG_TYPE_IDX] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[BAG_TYPE_IDX]] == bag.colour
+            if bag.detected_frames >= params.MINIMUM_DETECTED_FRAMES:
+                bag.visible = BAG_TYPES[BAG_TYPE_IDX] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[BAG_TYPE_IDX]] == bag.colour
             continue
 
         if not pred_has_bag(bag_id) and bag.missed_frames <= params.ALLOWED_MISSED_FRAMES:
