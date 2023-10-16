@@ -1,12 +1,10 @@
 import pygame
 import params
-import random
 import tracking
 import threading
 import colour_picker
 import cv2
-import scipy
-import numpy as np
+import np
 import requests
 
 # # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
@@ -21,8 +19,6 @@ class Bag:
         self.bag_type = bag_type
         self.colour = colour
         self.visible = visible
-        self.estimate = False
-        self.trajectory = [pos]
         self.missed_frames = 0
 
 
@@ -45,12 +41,11 @@ BAG_COLOR_PER_TYPE = {
 
 bags = {}
 
-brown_lower = np.array([0,100,20])
-brown_upper = np.array([30,255,200])
-yellow_lower = np.array([31,100,100])
-yellow_upper = np.array([50,255,255])
+brown_lower = np.array([0, 100, 20])
+brown_upper = np.array([30, 255, 200])
+yellow_lower = np.array([31, 100, 100])
+yellow_upper = np.array([50, 255, 255])
 
-allowed_missed_frames = 10
 annotated_frame = None
 run = True
 
@@ -100,68 +95,44 @@ def loop():
     cv2.destroyAllWindows()
 
 
-def update_bags(xyxy, bag_ids):
+def update_bags(xyxy, pred_bag_ids):
+    def pred_has_bag(bag_id):
+        return pred_bag_ids is not None and bag_id in pred_bag_ids
 
-    for bag_id in bags:
+    for bag_id, bag in bags.items():
+        if pred_has_bag(bag_id):
+            # bag predicted
+            bag.missed_frames = 0
 
-        if bag_ids is not None:
+            # visible if type is selected
+            bag.visible = BAG_TYPES[BAG_TYPE_IDX] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[BAG_TYPE_IDX]] == bag.colour
+            continue
 
-            if (BAG_TYPES[BAG_TYPE_IDX] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[BAG_TYPE_IDX]] == bags[bag_id].colour):
+        if not pred_has_bag(bag_id) and bag.missed_frames <= params.ALLOWED_MISSED_FRAMES:
+            # estimate position
+            bag.missed_frames += 1
+            continue
 
-                if bag_id in bag_ids:
-                    bags[bag_id].visible = True
-                    bags[bag_id].estimate = False
+        if not pred_has_bag(bag_id) and bags[bag_id].visible:
+            # bag taken off belt
+            bags[bag_id].visible = False
+            requests.post(f'{params.HOST}:{params.SERVER_PORT}/bag',
+                          json={'bagId': int(bag_id), 'action': 'off-belt'})
 
-                elif bag_id not in bag_ids and bags[bag_id].missed_frames <= allowed_missed_frames:
-                    bags[bag_id].visible = True
-                    bags[bag_id].estimate = True
-                    bags[bag_id].missed_frames += 1
-
-            else:
-                if bags[bag_id].visible:
-                    requests.post(
-                        f'{params.HOST}:{params.SERVER_PORT}/bag', json={'bagId': int(bag_id), 'action': 'off-belt'})
-
-                bags[bag_id].visible = False
-                bags[bag_id].estimate = False
-
-        else:
-
-            if bags[bag_id].missed_frames <= allowed_missed_frames and ((BAG_TYPES[BAG_TYPE_IDX] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[BAG_TYPE_IDX]] == bags[bag_id].colour)):
-                bags[bag_id].visible = True
-                bags[bag_id].estimate = True
-                bags[bag_id].missed_frames += 1
-
-            else:
-                if bags[bag_id].visible:
-                    requests.post(
-                        f'{params.HOST}:{params.SERVER_PORT}/bag', json={'bagId': int(bag_id), 'action': 'off-belt'})
-
-                bags[bag_id].visible = False
-                bags[bag_id].estimate = False
-
-    if xyxy is None or bag_ids is None:
+    if xyxy is None or pred_bag_ids is None:
         return
 
-    for bag_id, (x1, y1, x2, y2) in zip(bag_ids, xyxy):
+    for bag_id, (x1, y1, x2, y2) in zip(pred_bag_ids, xyxy):
         pos = int(x1)
         size = int(abs(x2 - x1))
 
-        if bag_id in bags and bags[bag_id].estimate == False:
+        if bag_id in bags:
+            # update bag with predictions
             bags[bag_id].pos = pos
             bags[bag_id].size = size
-            bags[bag_id].missed_frames = 0
-            bags[bag_id].trajectory.append(pos)
-
-        elif bag_id in bags and bags[bag_id].estimate == True:
-            est_pos = scipy.interpolate.interp1d(list(np.arange(0, len(
-                bags[bag_id].trajectory))), bags[bag_id].trajectory, fill_value='extrapolate')(len(bags[bag_id].trajectory))
-            bags[bag_id].pos = est_pos
-            bags[bag_id].size = size
-            bags[bag_id].trajectory.append(est_pos)
-
         else:
-            peak_colour = colour_picker.colour_picker(annotated_frame[int(y1):int(min((y2-y1), annotated_frame.shape[1])), int(x1):int(min((x2-x1), annotated_frame.shape[0]))])
+            peak_colour = colour_picker.colour_picker(annotated_frame[int(y1):int(min(
+                (y2-y1), annotated_frame.shape[1])), int(x1):int(min((x2-x1), annotated_frame.shape[0]))])
             if peak_colour is not None:
                 if (yellow_lower[0] <= peak_colour[0] <= yellow_upper[0]):
                     bag_type = 'PRIO'
@@ -169,14 +140,12 @@ def update_bags(xyxy, bag_ids):
                     bag_type = 'ECO'
                 else:
                     bag_type = 'TRF'
-                    
-                # bag_type = random.choice(BAG_TYPES[1:len(BAG_TYPES)])
+
                 bag_color = BAG_COLOR_PER_TYPE[bag_type]
                 bags[bag_id] = Bag(pos, size, bag_type, bag_color)
                 requests.post(
-                f'{params.HOST}:{params.SERVER_PORT}/bag', json={'bagId': int(bag_id), 'action': 'on-belt', 'bag_type': bag_type})
-            
-            
+                    f'{params.HOST}:{params.SERVER_PORT}/bag', json={'bagId': int(bag_id), 'action': 'on-belt', 'bag_type': bag_type})
+
 
 def track():
     global annotated_frame
