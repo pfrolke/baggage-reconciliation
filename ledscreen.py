@@ -162,7 +162,6 @@ def update_bags(xyxy, bag_ids):
 
         else:
             peak_colour = colour_picker.colour_picker(annotated_frame[int(y1):int(min((y2-y1), annotated_frame.shape[1])), int(x1):int(min((x2-x1), annotated_frame.shape[0]))])
-            print(peak_colour)
             if peak_colour is not None:
                 if (yellow_lower[0] <= peak_colour[0] <= yellow_upper[0]):
                     bag_type = 'PRIO'
