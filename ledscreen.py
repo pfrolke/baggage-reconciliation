@@ -57,6 +57,7 @@ run = True
 
 def loop():
     global run
+    global BAG_TYPE_IDX
     while run:
         # render annotated frame
         if annotated_frame is not None:
@@ -173,6 +174,8 @@ def update_bags(xyxy, bag_ids):
                 # bag_type = random.choice(BAG_TYPES[1:len(BAG_TYPES)])
                 bag_color = BAG_COLOR_PER_TYPE[bag_type]
                 bags[bag_id] = Bag(pos, size, bag_type, bag_color)
+                requests.post(
+                f'{params.HOST}:{params.SERVER_PORT}/bag', json={'bagId': int(bag_id), 'action': 'on-belt', 'bag_type': bag_type})
             
             
 
