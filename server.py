@@ -73,7 +73,7 @@ def update_bag_status(bagId, bag_status, ULD=''):
 
 
 def run_server():
-    app.run(host='0.0.0.0', port=params.SERVER_PORT)
+    app.run(host='0.0.0.0', port=params.SERVER_PORT, threaded=True)
 
 
 server_thread = threading.Thread(target=run_server)
