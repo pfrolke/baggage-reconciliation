@@ -2,6 +2,7 @@ from flask import Flask, request, json
 import tkinter as tk
 from tkinter import ttk
 import threading
+import params
 
 app = Flask(__name__)
 
@@ -18,7 +19,8 @@ off_belt = []
 # Create a Tkinter window
 window = tk.Tk()
 window.title("BagInfo v0.0.1")
-table = ttk.Treeview(window, columns=("BagId", "Class", "Status", "ULD"))
+COLUMNS = ("BagId", "Class", "Status", "ULD")
+table = ttk.Treeview(window, columns=COLUMNS)
 
 
 @app.route('/scan', methods=['POST'])
@@ -43,9 +45,9 @@ def bag():
     content = request.get_json()
     bagId = content['bagId']
     action = content['action']
-    bag_type = content['bag_type']
 
     if action == 'on-belt':
+        bag_type = content['bag_type']
         table.insert("", "end", values=(
             bagId, bag_type, BagStatus.ON_BELT, ''))
         return 'OK', 200
@@ -63,7 +65,7 @@ def update_bag_status(bagId, bag_status, ULD=''):
     for row in table.get_children():
         values = table.item(row, 'values')
 
-        if values[0] == bagId:
+        if int(values[0]) == bagId:
             table.item(row, values=(
                 values[0], values[1], bag_status, ULD))
             return 'OK', 200
@@ -71,16 +73,15 @@ def update_bag_status(bagId, bag_status, ULD=''):
 
 
 def run_server():
-    app.run(host='0.0.0.0', port=6969)
+    app.run(host='0.0.0.0', port=params.SERVER_PORT)
 
 
 server_thread = threading.Thread(target=run_server)
 server_thread.start()
 
-table.heading("#1", text="BagId")
-table.heading("#2", text="Class")
-table.heading("#3", text="Status")
-table.heading("#4", text="ULD")
+for i, col in enumerate(COLUMNS):
+    table.heading('#' + str(i), text=col)
+    table.column('#' + str(i), anchor="center")
 
 # Pack the table to display it
 table.pack()
