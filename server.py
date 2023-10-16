@@ -1,4 +1,4 @@
-from flask import Flask, request, json
+from flask import Flask, request
 import tkinter as tk
 from tkinter import ttk
 import threading
@@ -80,10 +80,9 @@ server_thread = threading.Thread(target=run_server)
 server_thread.start()
 
 for i, col in enumerate(COLUMNS):
-    table.heading('#' + str(i), text=col)
-    table.column('#' + str(i), anchor="center")
+    table.heading('#' + str(i + 1), text=col)
+    table.column('#' + str(i + 1), anchor="center")
 
-# Pack the table to display it
 table.pack()
 
 window.mainloop()
