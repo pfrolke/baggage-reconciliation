@@ -4,7 +4,7 @@ import tracking
 import threading
 import colour_picker
 import cv2
-import np
+import numpy as np
 import requests
 
 # # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
