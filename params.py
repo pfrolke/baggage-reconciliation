@@ -9,3 +9,6 @@ DEFAULT_SCREEN_SIZE = (1920, 1080)
 BACKGROUND_COLOR = 'black'
 TEXT_COLOR = 'black'
 FONT_SIZE = 32
+
+SERVER_PORT = 6969
+HOST = 'http://localhost'

@@ -7,11 +7,12 @@ import colour_picker
 import cv2
 import scipy
 import numpy as np
-from PIL import Image
+import requests
 
 # # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
 # import os
 # os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
 
 class Bag:
     def __init__(self, pos, size, bag_type, colour, visible=True):
@@ -56,7 +57,6 @@ run = True
 
 def loop():
     global run
-    global BAG_TYPE_IDX
     while run:
         # render annotated frame
         if annotated_frame is not None:
@@ -72,7 +72,7 @@ def loop():
 
                 rect = pygame.Rect(bag.pos, 0, bag.size, screen.get_height())
                 pygame.draw.rect(screen, bag.colour, rect)
-    
+
                 text = font.render(bag.bag_type, True, params.TEXT_COLOR)
                 text_rect = text.get_rect()
                 text_rect.center = (rect.x + (rect.w // 2),
@@ -80,15 +80,15 @@ def loop():
                 screen.blit(text, text_rect)
 
         for event in pygame.event.get():
-            
+
             if event.type == pygame.QUIT:
                 run = False
-                
-            if event.type == pygame.MOUSEBUTTONDOWN:    
-                if event.button == 3: #right mouse click
-                  BAG_TYPE_IDX += 1
-                  if BAG_TYPE_IDX >= len(BAG_TYPES):
-                      BAG_TYPE_IDX = 0
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 3:  # right mouse click
+                    BAG_TYPE_IDX += 1
+                    if BAG_TYPE_IDX >= len(BAG_TYPES):
+                        BAG_TYPE_IDX = 0
 
         # scale screen to fit window
         window_screen.blit(pygame.transform.scale(
@@ -100,34 +100,42 @@ def loop():
 
 
 def update_bags(xyxy, bag_ids):
-    
+
     for bag_id in bags:
-        
+
         if bag_ids is not None:
-            
+
             if (BAG_TYPES[BAG_TYPE_IDX] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[BAG_TYPE_IDX]] == bags[bag_id].colour):
-            
+
                 if bag_id in bag_ids:
                     bags[bag_id].visible = True
                     bags[bag_id].estimate = False
-                    
+
                 elif bag_id not in bag_ids and bags[bag_id].missed_frames <= allowed_missed_frames:
                     bags[bag_id].visible = True
                     bags[bag_id].estimate = True
                     bags[bag_id].missed_frames += 1
-                
+
             else:
+                if bags[bag_id].visible:
+                    requests.post(
+                        f'{params.HOST}:{params.SERVER_PORT}/bag', json={'bagId': int(bag_id), 'action': 'off-belt'})
+
                 bags[bag_id].visible = False
                 bags[bag_id].estimate = False
-            
+
         else:
-            
+
             if bags[bag_id].missed_frames <= allowed_missed_frames and ((BAG_TYPES[BAG_TYPE_IDX] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[BAG_TYPE_IDX]] == bags[bag_id].colour)):
                 bags[bag_id].visible = True
                 bags[bag_id].estimate = True
                 bags[bag_id].missed_frames += 1
-                
+
             else:
+                if bags[bag_id].visible:
+                    requests.post(
+                        f'{params.HOST}:{params.SERVER_PORT}/bag', json={'bagId': int(bag_id), 'action': 'off-belt'})
+
                 bags[bag_id].visible = False
                 bags[bag_id].estimate = False
 
@@ -143,13 +151,14 @@ def update_bags(xyxy, bag_ids):
             bags[bag_id].size = size
             bags[bag_id].missed_frames = 0
             bags[bag_id].trajectory.append(pos)
-            
+
         elif bag_id in bags and bags[bag_id].estimate == True:
-            est_pos = scipy.interpolate.interp1d(list(np.arange(0, len(bags[bag_id].trajectory))), bags[bag_id].trajectory, fill_value='extrapolate')(len(bags[bag_id].trajectory))
+            est_pos = scipy.interpolate.interp1d(list(np.arange(0, len(
+                bags[bag_id].trajectory))), bags[bag_id].trajectory, fill_value='extrapolate')(len(bags[bag_id].trajectory))
             bags[bag_id].pos = est_pos
             bags[bag_id].size = size
             bags[bag_id].trajectory.append(est_pos)
-            
+
         else:
             peak_colour = colour_picker.colour_picker(annotated_frame[int(y1):int(min((y2-y1), annotated_frame.shape[1])), int(x1):int(min((x2-x1), annotated_frame.shape[0]))])
             print(peak_colour)
@@ -171,7 +180,7 @@ def track():
     global annotated_frame
 
     for annotated_frame, dets in tracking.process_video('videos/belt_test_video.mov'):
-    # for annotated_frame, dets in tracking.process_cam():
+        # for annotated_frame, dets in tracking.process_cam():
 
         if not run:
             return
