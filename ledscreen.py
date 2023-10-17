@@ -4,8 +4,8 @@ import tracking
 import threading
 import colour_picker
 import cv2
-import numpy as np
 import requests
+import math
 
 # # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
 # import os
@@ -27,28 +27,40 @@ pygame.init()
 
 window_screen = pygame.display.set_mode(
     params.DEFAULT_SCREEN_SIZE, pygame.RESIZABLE)
-screen = window_screen.copy()
+screen = pygame.Surface(params.DEFAULT_SCREEN_SIZE)
 pygame.display.set_caption('LED SCREEN')
 
 font = pygame.font.Font('freesansbold.ttf', params.FONT_SIZE)
 
 BAG_TYPES = ['ALL', 'PRIO', 'ECO', 'TRF']
-BAG_TYPE_IDX = 0
 BAG_COLOR_PER_TYPE = {
     'PRIO': 'red',
     'ECO': 'green',
     'TRF': 'blue'
 }
 
+bag_type_idx = 0
 bags = {}
 
 annotated_frame = None
 run = True
 
 
+def scale_bag_size(bag: Bag) -> int:
+    screen_center = params.DEFAULT_SCREEN_SIZE[0] / 2
+    bag_center = bag.pos + bag.size / 2
+    delta_x = abs(bag_center - screen_center)
+
+    scaling_factor = math.sqrt(
+        params.DISTORTION_FACTOR ** 2 + delta_x ** 2) / params.DISTORTION_FACTOR
+
+    return int(bag.size * scaling_factor)
+
+
 def loop():
     global run
-    global BAG_TYPE_IDX
+    global bag_type_idx
+
     while run:
         # render annotated frame
         if annotated_frame is not None:
@@ -58,50 +70,30 @@ def loop():
                 run = False
 
         screen.fill(params.BACKGROUND_COLOR)
-        
-        sorted_bags = [[bag_id, bag.visible, bag.colour, bag.bag_type, bag.pos, bag.size] for bag_id, bag in bags.items()]
-        sorted_bags.sort(key = lambda x: x[5])
 
-        # for bag in bags.values():
-        #     if bag.visible == True:
+        sorted_bags = sorted(
+            bags.values(), key=lambda bag: bag.size, reverse=True)
 
-        #         rect = pygame.Rect(bag.pos, 0, bag.size, screen.get_height())
-        #         pygame.draw.rect(screen, bag.colour, rect)
-
-        #         text = font.render(bag.bag_type, True, params.TEXT_COLOR)
-        #         text_rect = text.get_rect()
-        #         text_rect.center = (rect.x + (rect.w // 2),
-        #                             screen.get_height() // 2)
-        #         screen.blit(text, text_rect)
-        
-        if sorted_bags == None or sorted_bags == []:
-            sorted_bags = []
-            
-        else:
-            sorted_bags.reverse()
-            
         for bag in sorted_bags:
-            if bag[1] == True:
+            if bag.visible == True:
+                scaled_size = scale_bag_size(bag)
+                rect = pygame.Rect(bag.pos, 0, scaled_size,
+                                   screen.get_height())
+                pygame.draw.rect(screen, bag.colour, rect)
 
-                rect = pygame.Rect(bag[4], 0, bag[5], screen.get_height())
-                pygame.draw.rect(screen, bag[2], rect)
-
-                text = font.render(bag[3], True, params.TEXT_COLOR)
+                text = font.render(bag.bag_type, True, params.TEXT_COLOR)
                 text_rect = text.get_rect()
                 text_rect.center = (rect.x + (rect.w // 2),
                                     screen.get_height() // 2)
                 screen.blit(text, text_rect)
 
         for event in pygame.event.get():
-
             if event.type == pygame.QUIT:
                 run = False
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3:  # right mouse click
-                    BAG_TYPE_IDX += 1
-                    if BAG_TYPE_IDX >= len(BAG_TYPES):
-                        BAG_TYPE_IDX = 0
+                    bag_type_idx = (bag_type_idx + 1) % len(BAG_TYPES)
 
         # scale screen to fit window
         window_screen.blit(pygame.transform.scale(
@@ -124,7 +116,7 @@ def update_bags(xyxy, pred_bag_ids):
 
             # visible if type is selected
             if bag.detected_frames >= params.MINIMUM_DETECTED_FRAMES:
-                bag.visible = BAG_TYPES[BAG_TYPE_IDX] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[BAG_TYPE_IDX]] == bag.colour
+                bag.visible = BAG_TYPES[bag_type_idx] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[bag_type_idx]] == bag.colour
             continue
 
         if not pred_has_bag(bag_id) and bag.missed_frames <= params.ALLOWED_MISSED_FRAMES:
