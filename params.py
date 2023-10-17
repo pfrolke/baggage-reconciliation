@@ -1,3 +1,5 @@
+import numpy as np
+
 LARGE_MODEL = 'models/yolov8l.pt'
 NANO_MODEL = 'models/yolov8n.pt'
 MODEL = LARGE_MODEL
@@ -12,6 +14,11 @@ TEXT_COLOR = 'black'
 FONT_SIZE = 32
 ALLOWED_MISSED_FRAMES = 10
 MINIMUM_DETECTED_FRAMES = 20
+
+BROWN_LOWER = np.array([0, 100, 20])
+BROWN_UPPER = np.array([30, 255, 200])
+YELLOW_LOWER = np.array([31, 100, 100])
+YELLOW_UPPER = np.array([50, 255, 255])
 
 SERVER_PORT = 6969
 HOST = 'http://localhost'

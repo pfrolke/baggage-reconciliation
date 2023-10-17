@@ -7,9 +7,9 @@ import cv2
 import numpy as np
 import requests
 
-# # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
-# import os
-# os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+# Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 class Bag:
@@ -41,11 +41,6 @@ BAG_COLOR_PER_TYPE = {
 }
 
 bags = {}
-
-brown_lower = np.array([0, 100, 20])
-brown_upper = np.array([30, 255, 200])
-yellow_lower = np.array([31, 100, 100])
-yellow_upper = np.array([50, 255, 255])
 
 annotated_frame = None
 run = True
@@ -137,9 +132,9 @@ def update_bags(xyxy, pred_bag_ids):
             peak_colour = colour_picker.colour_picker(annotated_frame[int(y1):int(min(
                 (y2-y1), annotated_frame.shape[1])), int(x1):int(min((x2-x1), annotated_frame.shape[0]))])
             if peak_colour is not None:
-                if (yellow_lower[0] <= peak_colour[0] <= yellow_upper[0]):
+                if (params.YELLOW_LOWER[0] <= peak_colour[0] <= params.YELLOW_UPPER[0]):
                     bag_type = 'PRIO'
-                elif (brown_lower[0] <= peak_colour[0] <= brown_upper[0]):
+                elif (params.BROWN_LOWER[0] <= peak_colour[0] <= params.BROWN_UPPER[0]):
                     bag_type = 'ECO'
                 else:
                     bag_type = 'TRF'
