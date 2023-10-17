@@ -7,9 +7,9 @@ import cv2
 import numpy as np
 import requests
 
-# Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
-import os
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+# # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
+# import os
+# os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
 class Bag:
@@ -58,14 +58,35 @@ def loop():
                 run = False
 
         screen.fill(params.BACKGROUND_COLOR)
+        
+        sorted_bags = [[bag_id, bag.visible, bag.colour, bag.bag_type, bag.pos, bag.size] for bag_id, bag in bags.items()]
+        sorted_bags.sort(key = lambda x: x[5])
 
-        for bag in bags.values():
-            if bag.visible == True:
+        # for bag in bags.values():
+        #     if bag.visible == True:
 
-                rect = pygame.Rect(bag.pos, 0, bag.size, screen.get_height())
-                pygame.draw.rect(screen, bag.colour, rect)
+        #         rect = pygame.Rect(bag.pos, 0, bag.size, screen.get_height())
+        #         pygame.draw.rect(screen, bag.colour, rect)
 
-                text = font.render(bag.bag_type, True, params.TEXT_COLOR)
+        #         text = font.render(bag.bag_type, True, params.TEXT_COLOR)
+        #         text_rect = text.get_rect()
+        #         text_rect.center = (rect.x + (rect.w // 2),
+        #                             screen.get_height() // 2)
+        #         screen.blit(text, text_rect)
+        
+        if sorted_bags == None or sorted_bags == []:
+            sorted_bags = []
+            
+        else:
+            sorted_bags.reverse()
+            
+        for bag in sorted_bags:
+            if bag[1] == True:
+
+                rect = pygame.Rect(bag[4], 0, bag[5], screen.get_height())
+                pygame.draw.rect(screen, bag[2], rect)
+
+                text = font.render(bag[3], True, params.TEXT_COLOR)
                 text_rect = text.get_rect()
                 text_rect.center = (rect.x + (rect.w // 2),
                                     screen.get_height() // 2)

@@ -13,8 +13,8 @@ print(device)
 
 
 yolo = YOLO(params.MODEL).to(device)
-# If "AttributeError: 'NoneType' object has no attribute 'names'" -> use next line
-# yolo = YOLO(params.MODEL)
+# # If "AttributeError: 'NoneType' object has no attribute 'names'" -> use next line
+# yolo = YOLO(params.NANO_MODEL)
 
 filter_classes = [
     c for c in yolo.names.keys() if c not in params.YOLO_BLOCKLIST]
