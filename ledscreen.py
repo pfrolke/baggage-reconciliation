@@ -169,6 +169,8 @@ def update_bags(xyxy, pred_bag_ids):
                     
             bags[bag_id].bag_type = bag_type
             bags[bag_id].colour = BAG_COLOR_PER_TYPE[bag_type]
+            bags[bag_id].pos = pos
+            bags[bag_id].size = size
             
             if (bag_type != "TEMP"):
                 requests.post(
