@@ -11,10 +11,7 @@ device = "mps" if params.USE_GPU and torch.backends.mps.is_available() else "cpu
 device = "cuda" if params.USE_GPU and torch.cuda.is_available() else device
 print(device)
 
-
 yolo = YOLO(params.MODEL).to(device)
-# # If "AttributeError: 'NoneType' object has no attribute 'names'" -> use next line
-# yolo = YOLO(params.NANO_MODEL)
 
 # setup tracker & annotator
 tracker = sv.ByteTrack(track_buffer=params.TRACKING_BUFFER)

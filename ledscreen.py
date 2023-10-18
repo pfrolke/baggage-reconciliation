@@ -7,12 +7,6 @@ import cv2
 import requests
 import math
 
-
-# # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
-# import os
-# os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-
-
 class Bag:
     def __init__(self, pos, size, bag_type, colour, visible=True):
         self.pos = pos
