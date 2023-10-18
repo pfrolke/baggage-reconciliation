@@ -32,11 +32,15 @@ def log(response):
 
 @app.route("/scan", methods=["POST"])
 def scan():
+    global uld_closing
     content = request.get_json()
     cartid = content["cart"]
 
+    uld_closing = {id: 0 if id != cartid else uld_closing[cartid] for id in uld_closing}
+
     if not off_belt:
         uld_closing[cartid] += 1
+
         if uld_closing[cartid] < 3:
             return f"ULD closing {uld_closing[cartid]}/3", 200
 
@@ -83,6 +87,7 @@ def bag():
         row, values = ret
 
         table.item(row, values=(values[0], values[1], BagStatus.OFF_BELT, values[3]))
+        off_belt.append(bagId)
         return "OK", 200
 
     return "Invalid action", 400
@@ -102,7 +107,7 @@ def update_uld_status(ULD, status):
     for row in table.get_children():
         values = table.item(row, "values")
 
-        if int(values[3]) == ULD:
+        if values[3] == ULD:
             table.item(row, values=(values[0], values[1], status, ULD))
 
 

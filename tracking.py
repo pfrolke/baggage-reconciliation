@@ -16,8 +16,6 @@ yolo = YOLO(params.MODEL).to(device)
 # # If "AttributeError: 'NoneType' object has no attribute 'names'" -> use next line
 # yolo = YOLO(params.NANO_MODEL)
 
-filter_classes = [c for c in yolo.names.keys() if c not in params.YOLO_BLOCKLIST]
-
 # setup tracker & annotator
 tracker = sv.ByteTrack(track_buffer=params.TRACKING_BUFFER)
 trace_annotator = sv.TraceAnnotator(
@@ -30,9 +28,9 @@ box_annotator = sv.BoxAnnotator(
 
 def process_frame(frame):
     # object detection & tracking - block list
-    yolo_result = yolo(frame, verbose=False, classes=filter_classes, agnostic_nms=True)[
-        0
-    ]
+    yolo_result = yolo(
+        frame, verbose=False, classes=params.YOLO_ALLOWLIST, agnostic_nms=True
+    )[0]
 
     # # object detection & tracking - only suitcases and bags
     # yolo_result = yolo(frame, verbose=False, classes=(24, 26, 28))[0]

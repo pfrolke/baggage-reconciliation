@@ -73,8 +73,11 @@ def loop():
 
         for bag in sorted_bags:
             if bag.visible == True:
-                scaled_size = scale_bag_size(bag)
-                rect = pygame.Rect(bag.pos, 0, scaled_size, screen.get_height())
+                # scaled_size = scale_bag_size(bag)
+                if bag.pos + bag.size >= screen.get_width():
+                    bag.size = screen.get_width() - bag.pos
+
+                rect = pygame.Rect(bag.pos, 0, bag.size, screen.get_height())
                 pygame.draw.rect(screen, bag.colour, rect)
 
                 text = font.render(bag.bag_type, True, params.TEXT_COLOR)
@@ -152,32 +155,32 @@ def update_bags(xyxy, pred_bag_ids):
                     int(x1) : int(min((x2 - x1), annotated_frame.shape[0])),
                 ]
             )
+
+            bag_type = "TRF"
+
             if peak_colour is not None:
                 if params.YELLOW_LOWER[0] <= peak_colour[0] <= params.YELLOW_UPPER[0]:
                     bag_type = "PRIO"
                 elif params.BROWN_LOWER[0] <= peak_colour[0] <= params.BROWN_UPPER[0]:
                     bag_type = "ECO"
-                else:
-                    bag_type = "TRF"
 
-                bag_color = BAG_COLOR_PER_TYPE[bag_type]
-                bags[bag_id] = Bag(pos, size, bag_type, bag_color)
-                requests.post(
-                    f"{params.HOST}:{params.SERVER_PORT}/bag",
-                    json={
-                        "bagId": int(bag_id),
-                        "action": "on-belt",
-                        "bag_type": bag_type,
-                    },
-                )
+            bag_color = BAG_COLOR_PER_TYPE[bag_type]
+            bags[bag_id] = Bag(pos, size, bag_type, bag_color)
+            requests.post(
+                f"{params.HOST}:{params.SERVER_PORT}/bag",
+                json={
+                    "bagId": int(bag_id),
+                    "action": "on-belt",
+                    "bag_type": bag_type,
+                },
+            )
 
 
 def track():
     global annotated_frame
 
-    for annotated_frame, dets in tracking.process_video("videos/belt_test_video.mov"):
-        # for annotated_frame, dets in tracking.process_cam():
-
+    # for annotated_frame, dets in tracking.process_video("videos/belt_test_video.mov"):
+    for annotated_frame, dets in tracking.process_cam():
         if not run:
             return
 
