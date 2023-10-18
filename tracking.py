@@ -16,21 +16,23 @@ yolo = YOLO(params.MODEL).to(device)
 # # If "AttributeError: 'NoneType' object has no attribute 'names'" -> use next line
 # yolo = YOLO(params.NANO_MODEL)
 
-filter_classes = [
-    c for c in yolo.names.keys() if c not in params.YOLO_BLOCKLIST]
+filter_classes = [c for c in yolo.names.keys() if c not in params.YOLO_BLOCKLIST]
 
 # setup tracker & annotator
 tracker = sv.ByteTrack(track_buffer=params.TRACKING_BUFFER)
 trace_annotator = sv.TraceAnnotator(
-    color=sv.ColorPalette.default(), trace_length=params.TRACKING_BUFFER)
+    color=sv.ColorPalette.default(), trace_length=params.TRACKING_BUFFER
+)
 box_annotator = sv.BoxAnnotator(
-    color=sv.ColorPalette.default(), thickness=params.BOX_THICKNESS)
+    color=sv.ColorPalette.default(), thickness=params.BOX_THICKNESS
+)
 
 
 def process_frame(frame):
     # object detection & tracking - block list
-    yolo_result = yolo(frame, verbose=False,
-                       classes=filter_classes, agnostic_nms=True)[0]
+    yolo_result = yolo(frame, verbose=False, classes=filter_classes, agnostic_nms=True)[
+        0
+    ]
 
     # # object detection & tracking - only suitcases and bags
     # yolo_result = yolo(frame, verbose=False, classes=(24, 26, 28))[0]
@@ -61,7 +63,7 @@ def process_cam():
         dTime = time.time_ns()
         if dTime - curTime > 1e9:
             curTime = dTime
-            print(frames, 'fps')
+            print(frames, "fps")
             frames = 0
         frames += 1
 
@@ -81,7 +83,7 @@ def process_video(path):
     frame_gen = sv.get_video_frames_generator(path)
     video_info = sv.VideoInfo.from_video_path(path)
 
-    with sv.VideoSink(f'{path}-pred.mp4', video_info) as sink:
+    with sv.VideoSink(f"{path}-pred.mp4", video_info) as sink:
         for frame in tqdm(frame_gen, total=video_info.total_frames):
             frame, dets = process_frame(frame)
             sink.write_frame(frame)
@@ -89,12 +91,12 @@ def process_video(path):
             yield frame, dets
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # for annotated_frame, dets in process_video('videos/test_video.mov'):
     for annotated_frame, dets in process_cam():
-        cv2.imshow('BAG TRACKER 9000', annotated_frame)
+        cv2.imshow("BAG TRACKER 9000", annotated_frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
     cv2.destroyAllWindows()

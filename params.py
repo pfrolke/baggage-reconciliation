@@ -1,7 +1,7 @@
 import numpy as np
 
-LARGE_MODEL = 'models/yolov8l.pt'
-NANO_MODEL = 'models/yolov8n.pt'
+LARGE_MODEL = "models/yolov8l.pt"
+NANO_MODEL = "models/yolov8n.pt"
 MODEL = LARGE_MODEL
 TRACKING_BUFFER = 200
 USE_GPU = True
@@ -9,8 +9,8 @@ BOX_THICKNESS = 4
 YOLO_BLOCKLIST = (0, 25, 63, 73, 64)
 
 DEFAULT_SCREEN_SIZE = (1920, 1080)
-BACKGROUND_COLOR = 'black'
-TEXT_COLOR = 'black'
+BACKGROUND_COLOR = "black"
+TEXT_COLOR = "black"
 FONT_SIZE = 32
 ALLOWED_MISSED_FRAMES = 10
 MINIMUM_DETECTED_FRAMES = 20
@@ -23,4 +23,6 @@ YELLOW_LOWER = np.array([31, 100, 100])
 YELLOW_UPPER = np.array([50, 255, 255])
 
 SERVER_PORT = 6969
-HOST = 'http://localhost'
+HOST = "http://localhost"
+
+SEGREGATION = {"one": "PRIO", "two": "ECO"}

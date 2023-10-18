@@ -7,6 +7,7 @@ import cv2
 import requests
 import math
 
+
 # # Use if "OMP: Error #15: Initializing libiomp5md.dll, but found libiomp5md.dll already initialized."
 # import os
 # os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
@@ -25,19 +26,14 @@ class Bag:
 
 pygame.init()
 
-window_screen = pygame.display.set_mode(
-    params.DEFAULT_SCREEN_SIZE, pygame.RESIZABLE)
+window_screen = pygame.display.set_mode(params.DEFAULT_SCREEN_SIZE, pygame.RESIZABLE)
 screen = pygame.Surface(params.DEFAULT_SCREEN_SIZE)
-pygame.display.set_caption('LED SCREEN')
+pygame.display.set_caption("LED SCREEN")
 
-font = pygame.font.Font('freesansbold.ttf', params.FONT_SIZE)
+font = pygame.font.Font("freesansbold.ttf", params.FONT_SIZE)
 
-BAG_TYPES = ['ALL', 'PRIO', 'ECO', 'TRF']
-BAG_COLOR_PER_TYPE = {
-    'PRIO': 'red',
-    'ECO': 'green',
-    'TRF': 'blue'
-}
+BAG_TYPES = ["ALL", "PRIO", "ECO", "TRF"]
+BAG_COLOR_PER_TYPE = {"PRIO": "red", "ECO": "green", "TRF": "blue"}
 
 bag_type_idx = 0
 bags = {}
@@ -51,8 +47,10 @@ def scale_bag_size(bag: Bag) -> int:
     bag_center = bag.pos + bag.size / 2
     delta_x = abs(bag_center - screen_center)
 
-    scaling_factor = math.sqrt(
-        params.DISTORTION_FACTOR ** 2 + delta_x ** 2) / params.DISTORTION_FACTOR
+    scaling_factor = (
+        math.sqrt(params.DISTORTION_FACTOR**2 + delta_x**2)
+        / params.DISTORTION_FACTOR
+    )
 
     return int(bag.size * scaling_factor)
 
@@ -64,27 +62,24 @@ def loop():
     while run:
         # render annotated frame
         if annotated_frame is not None:
-            cv2.imshow('BAG TRACKER 9000', annotated_frame)
+            cv2.imshow("BAG TRACKER 9000", annotated_frame)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(1) & 0xFF == ord("q"):
                 run = False
 
         screen.fill(params.BACKGROUND_COLOR)
 
-        sorted_bags = sorted(
-            bags.values(), key=lambda bag: bag.size, reverse=True)
+        sorted_bags = sorted(bags.values(), key=lambda bag: bag.size, reverse=True)
 
         for bag in sorted_bags:
             if bag.visible == True:
                 scaled_size = scale_bag_size(bag)
-                rect = pygame.Rect(bag.pos, 0, scaled_size,
-                                   screen.get_height())
+                rect = pygame.Rect(bag.pos, 0, scaled_size, screen.get_height())
                 pygame.draw.rect(screen, bag.colour, rect)
 
                 text = font.render(bag.bag_type, True, params.TEXT_COLOR)
                 text_rect = text.get_rect()
-                text_rect.center = (rect.x + (rect.w // 2),
-                                    screen.get_height() // 2)
+                text_rect.center = (rect.x + (rect.w // 2), screen.get_height() // 2)
                 screen.blit(text, text_rect)
 
         for event in pygame.event.get():
@@ -96,8 +91,9 @@ def loop():
                     bag_type_idx = (bag_type_idx + 1) % len(BAG_TYPES)
 
         # scale screen to fit window
-        window_screen.blit(pygame.transform.scale(
-            screen, window_screen.get_rect().size), (0, 0))
+        window_screen.blit(
+            pygame.transform.scale(screen, window_screen.get_rect().size), (0, 0)
+        )
         pygame.display.flip()
 
     pygame.quit()
@@ -116,10 +112,16 @@ def update_bags(xyxy, pred_bag_ids):
 
             # visible if type is selected
             if bag.detected_frames >= params.MINIMUM_DETECTED_FRAMES:
-                bag.visible = BAG_TYPES[bag_type_idx] == 'ALL' or BAG_COLOR_PER_TYPE[BAG_TYPES[bag_type_idx]] == bag.colour
+                bag.visible = (
+                    BAG_TYPES[bag_type_idx] == "ALL"
+                    or BAG_COLOR_PER_TYPE[BAG_TYPES[bag_type_idx]] == bag.colour
+                )
             continue
 
-        if not pred_has_bag(bag_id) and bag.missed_frames <= params.ALLOWED_MISSED_FRAMES:
+        if (
+            not pred_has_bag(bag_id)
+            and bag.missed_frames <= params.ALLOWED_MISSED_FRAMES
+        ):
             # estimate position
             bag.missed_frames += 1
             continue
@@ -127,8 +129,10 @@ def update_bags(xyxy, pred_bag_ids):
         if not pred_has_bag(bag_id) and bags[bag_id].visible:
             # bag taken off belt
             bags[bag_id].visible = False
-            requests.post(f'{params.HOST}:{params.SERVER_PORT}/bag',
-                          json={'bagId': int(bag_id), 'action': 'off-belt'})
+            requests.post(
+                f"{params.HOST}:{params.SERVER_PORT}/bag",
+                json={"bagId": int(bag_id), "action": "off-belt"},
+            )
 
     if xyxy is None or pred_bag_ids is None:
         return
@@ -142,26 +146,36 @@ def update_bags(xyxy, pred_bag_ids):
             bags[bag_id].pos = pos
             bags[bag_id].size = size
         else:
-            peak_colour = colour_picker.colour_picker(annotated_frame[int(y1):int(min(
-                (y2-y1), annotated_frame.shape[1])), int(x1):int(min((x2-x1), annotated_frame.shape[0]))])
+            peak_colour = colour_picker.colour_picker(
+                annotated_frame[
+                    int(y1) : int(min((y2 - y1), annotated_frame.shape[1])),
+                    int(x1) : int(min((x2 - x1), annotated_frame.shape[0])),
+                ]
+            )
             if peak_colour is not None:
-                if (params.YELLOW_LOWER[0] <= peak_colour[0] <= params.YELLOW_UPPER[0]):
-                    bag_type = 'PRIO'
-                elif (params.BROWN_LOWER[0] <= peak_colour[0] <= params.BROWN_UPPER[0]):
-                    bag_type = 'ECO'
+                if params.YELLOW_LOWER[0] <= peak_colour[0] <= params.YELLOW_UPPER[0]:
+                    bag_type = "PRIO"
+                elif params.BROWN_LOWER[0] <= peak_colour[0] <= params.BROWN_UPPER[0]:
+                    bag_type = "ECO"
                 else:
-                    bag_type = 'TRF'
+                    bag_type = "TRF"
 
                 bag_color = BAG_COLOR_PER_TYPE[bag_type]
                 bags[bag_id] = Bag(pos, size, bag_type, bag_color)
                 requests.post(
-                    f'{params.HOST}:{params.SERVER_PORT}/bag', json={'bagId': int(bag_id), 'action': 'on-belt', 'bag_type': bag_type})
+                    f"{params.HOST}:{params.SERVER_PORT}/bag",
+                    json={
+                        "bagId": int(bag_id),
+                        "action": "on-belt",
+                        "bag_type": bag_type,
+                    },
+                )
 
 
 def track():
     global annotated_frame
 
-    for annotated_frame, dets in tracking.process_video('videos/belt_test_video.mov'):
+    for annotated_frame, dets in tracking.process_video("videos/belt_test_video.mov"):
         # for annotated_frame, dets in tracking.process_cam():
 
         if not run:
