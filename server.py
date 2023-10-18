@@ -24,6 +24,12 @@ table = ttk.Treeview(window, columns=COLUMNS)
 uld_closing = {"one": 0, "two": 0}
 
 
+@app.after_request
+def log(response):
+    print(response.get_data())
+    return response
+
+
 @app.route("/scan", methods=["POST"])
 def scan():
     content = request.get_json()
@@ -32,7 +38,7 @@ def scan():
     if not off_belt:
         uld_closing[cartid] += 1
         if uld_closing[cartid] < 3:
-            return f"Closing {uld_closing[cartid]}/3", 200
+            return f"ULD closing {uld_closing[cartid]}/3", 200
 
         uld_closing[cartid] = 0
         update_uld_status(cartid, "ULD closed")
@@ -48,10 +54,11 @@ def scan():
 
     row, values = res
 
-    if values[1] not in params.SEGREGATION[cartid]:
-        return "ERRROR", 400
-
     table.item(row, values=(values[0], values[1], BagStatus.LOADED, cartid))
+
+    if values[1] not in params.SEGREGATION[cartid]:
+        table.item(row, tags=("error"))
+        return "INCORRECT CART", 200
 
     return "SUCCESS", 200
 
@@ -109,6 +116,8 @@ server_thread.start()
 for i, col in enumerate(COLUMNS):
     table.heading("#" + str(i + 1), text=col)
     table.column("#" + str(i + 1), anchor="center")
+
+table.tag_configure("error", background="orange")
 
 table.pack()
 
