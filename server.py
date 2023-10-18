@@ -15,6 +15,7 @@ class BagStatus:
 
 off_belt = []
 closed = []
+error_bag = None
 
 # Create a Tkinter window
 window = tk.Tk()
@@ -32,43 +33,53 @@ def log(response):
 
 @app.route("/scan", methods=["POST"])
 def scan():
-    global uld_closing
     content = request.get_json()
     cartid = content["cart"]
 
     if cartid in closed:
         return "ULD closed", 200
 
+    global uld_closing
     uld_closing = {id: 0 if id != cartid else uld_closing[cartid] for id in uld_closing}
 
-    if not off_belt:
-        uld_closing[cartid] += 1
-
-        if uld_closing[cartid] < 3:
-            return f"ULD closing {uld_closing[cartid]}/3", 200
-
-        update_uld_status(cartid, "ULD closed")
-        closed.append(cartid)
-        return "ULD closed", 200
-
-    uld_closing[cartid] = 0
-
-    bagId = off_belt.pop()
-
-    res = get_row(bagId)
-    if res is None:
+    global error_bag
+    if not error_bag and not off_belt:
         return "Bag not found", 400
 
-    row, values = res
+    bagId = error_bag or off_belt.pop()
+    row, values = get_row(bagId)
 
     table.item(row, values=(values[0], values[1], BagStatus.LOADED, cartid))
 
     if values[1] not in params.SEGREGATION[cartid]:
         table.item(row, tags=("error"))
+        error_bag = bagId
         return "INCORRECT CART", 200
 
     table.item(row, tags=("success"))
+    error_bag = None
     return "SUCCESS", 200
+
+
+@app.route("/ULD", methods=["POST"])
+def uld():
+    content = request.get_json()
+    cartid = content["cart"]
+
+    if cartid in closed:
+        return "ULD closed", 200
+
+    global uld_closing
+    uld_closing = {id: 0 if id != cartid else uld_closing[cartid] for id in uld_closing}
+
+    uld_closing[cartid] += 1
+
+    if uld_closing[cartid] < 3:
+        return f"ULD closing {uld_closing[cartid]}/3", 200
+
+    update_uld_status(cartid, "ULD closed")
+    closed.append(cartid)
+    return "ULD closed", 200
 
 
 @app.route("/bag", methods=["POST"])
@@ -83,12 +94,12 @@ def bag():
         return "OK", 200
 
     elif action == "off-belt":
-        ret = get_row(bagId)
+        global error_bag
+        error_bag = None
 
-        if ret is None:
+        row, values = get_row(bagId)
+        if row is None:
             return "Bag not found", 400
-
-        row, values = ret
 
         table.item(row, values=(values[0], values[1], BagStatus.OFF_BELT, values[3]))
         off_belt.append(bagId)
@@ -109,7 +120,7 @@ def get_row(bagId=None, uld=None):
 
         return row, values
 
-    return None
+    return None, None
 
 
 def update_uld_status(uld, status):
@@ -133,6 +144,9 @@ for i, col in enumerate(COLUMNS):
 
 table.tag_configure("error", background="orange")
 table.tag_configure("success", background="green")
+
+table.insert("", "end", values=(1, "ECO", BagStatus.OFF_BELT, ""))
+off_belt.append(1)
 
 table.pack()
 
