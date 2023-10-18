@@ -8,7 +8,7 @@ import scipy.misc
 import scipy.cluster
 import cv2
 
-NUM_CLUSTERS = 10
+NUM_CLUSTERS = 5
 
 
 def colour_picker(img):

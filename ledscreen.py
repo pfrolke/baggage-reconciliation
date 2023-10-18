@@ -32,8 +32,8 @@ pygame.display.set_caption("LED SCREEN")
 
 font = pygame.font.Font("freesansbold.ttf", params.FONT_SIZE)
 
-BAG_TYPES = ["ALL", "PRIO", "ECO", "TRF"]
-BAG_COLOR_PER_TYPE = {"PRIO": "red", "ECO": "green", "TRF": "blue"}
+BAG_TYPES = ["ALL", "TEMP", "PRIO", "ECO", "TRF"]
+BAG_COLOR_PER_TYPE = {"TEMP": "gray", "PRIO": "red", "ECO": "green", "TRF": "blue"}
 
 bag_type_idx = 0
 bags = {}
@@ -144,10 +144,42 @@ def update_bags(xyxy, pred_bag_ids):
         pos = int(x1)
         size = int(abs(x2 - x1))
 
-        if bag_id in bags:
+        if bag_id in bags and bags[bag_id].bag_type != "TEMP":
             # update bag with predictions
             bags[bag_id].pos = pos
             bags[bag_id].size = size
+            
+        elif bag_id in bags and bags[bag_id].bag_type == "TEMP":
+            peak_colour = colour_picker.colour_picker(
+                annotated_frame[
+                    int(y1) : int(min((y2 - y1), annotated_frame.shape[1])),
+                    int(x1) : int(min((x2 - x1), annotated_frame.shape[0])),
+                ]
+            )
+
+            bag_type = "TEMP"
+
+            if peak_colour is not None:
+                if params.YELLOW_LOWER[0] <= peak_colour[0] <= params.YELLOW_UPPER[0]:
+                    bag_type = "PRIO"
+                elif params.BROWN_LOWER[0] <= peak_colour[0] <= params.BROWN_UPPER[0]:
+                    bag_type = "ECO"
+                else:
+                    bag_type = "TRF"
+                    
+            bags[bag_id].bag_type = bag_type
+            bags[bag_id].colour = BAG_COLOR_PER_TYPE[bag_type]
+            
+            if (bag_type != "TEMP"):
+                requests.post(
+                    f"{params.HOST}:{params.SERVER_PORT}/bag",
+                    json={
+                        "bagId": int(bag_id),
+                        "action": "on-belt",
+                        "bag_type": bag_type,
+                    },
+                )
+            
         else:
             peak_colour = colour_picker.colour_picker(
                 annotated_frame[
@@ -156,31 +188,34 @@ def update_bags(xyxy, pred_bag_ids):
                 ]
             )
 
-            bag_type = "TRF"
+            bag_type = "TEMP"
 
             if peak_colour is not None:
                 if params.YELLOW_LOWER[0] <= peak_colour[0] <= params.YELLOW_UPPER[0]:
                     bag_type = "PRIO"
                 elif params.BROWN_LOWER[0] <= peak_colour[0] <= params.BROWN_UPPER[0]:
                     bag_type = "ECO"
+                else:
+                    bag_type = "TRF"
 
             bag_color = BAG_COLOR_PER_TYPE[bag_type]
             bags[bag_id] = Bag(pos, size, bag_type, bag_color)
-            requests.post(
-                f"{params.HOST}:{params.SERVER_PORT}/bag",
-                json={
-                    "bagId": int(bag_id),
-                    "action": "on-belt",
-                    "bag_type": bag_type,
-                },
-            )
-
+            
+            if (bag_type != "TEMP"):
+                requests.post(
+                    f"{params.HOST}:{params.SERVER_PORT}/bag",
+                    json={
+                        "bagId": int(bag_id),
+                        "action": "on-belt",
+                        "bag_type": bag_type,
+                    },
+                )
 
 def track():
     global annotated_frame
 
-    # for annotated_frame, dets in tracking.process_video("videos/belt_test_video.mov"):
-    for annotated_frame, dets in tracking.process_cam():
+    for annotated_frame, dets in tracking.process_video("videos/belt-test-video_rev.qt"):
+    # for annotated_frame, dets in tracking.process_cam():
         if not run:
             return
 
