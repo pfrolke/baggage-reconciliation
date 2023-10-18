@@ -26,7 +26,13 @@ class Bag:
 
 pygame.init()
 
-window_screen = pygame.display.set_mode(params.DEFAULT_SCREEN_SIZE, pygame.RESIZABLE)
+cv2.namedWindow("BAG TRACKER 9000", cv2.WINDOW_NORMAL)
+
+displayInfo = pygame.display.Info()
+display_w, display_h = displayInfo.current_w, displayInfo.current_h
+window_screen = pygame.display.set_mode(
+    (display_w, display_h * 2 // 3), pygame.RESIZABLE
+)
 screen = pygame.Surface(params.DEFAULT_SCREEN_SIZE)
 pygame.display.set_caption("LED SCREEN")
 
@@ -63,6 +69,7 @@ def loop():
         # render annotated frame
         if annotated_frame is not None:
             cv2.imshow("BAG TRACKER 9000", annotated_frame)
+            cv2.resizeWindow("BAG TRACKER 9000", display_w // 2, display_h // 4)
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 run = False
@@ -148,7 +155,7 @@ def update_bags(xyxy, pred_bag_ids):
             # update bag with predictions
             bags[bag_id].pos = pos
             bags[bag_id].size = size
-            
+
         elif bag_id in bags and bags[bag_id].bag_type == "TEMP":
             peak_colour = colour_picker.colour_picker(
                 annotated_frame[
@@ -166,13 +173,13 @@ def update_bags(xyxy, pred_bag_ids):
                     bag_type = "ECO"
                 else:
                     bag_type = "TRF"
-                    
+
             bags[bag_id].bag_type = bag_type
             bags[bag_id].colour = BAG_COLOR_PER_TYPE[bag_type]
             bags[bag_id].pos = pos
             bags[bag_id].size = size
-            
-            if (bag_type != "TEMP"):
+
+            if bag_type != "TEMP":
                 requests.post(
                     f"{params.HOST}:{params.SERVER_PORT}/bag",
                     json={
@@ -181,7 +188,7 @@ def update_bags(xyxy, pred_bag_ids):
                         "bag_type": bag_type,
                     },
                 )
-            
+
         else:
             peak_colour = colour_picker.colour_picker(
                 annotated_frame[
@@ -202,8 +209,8 @@ def update_bags(xyxy, pred_bag_ids):
 
             bag_color = BAG_COLOR_PER_TYPE[bag_type]
             bags[bag_id] = Bag(pos, size, bag_type, bag_color)
-            
-            if (bag_type != "TEMP"):
+
+            if bag_type != "TEMP":
                 requests.post(
                     f"{params.HOST}:{params.SERVER_PORT}/bag",
                     json={
@@ -213,11 +220,14 @@ def update_bags(xyxy, pred_bag_ids):
                     },
                 )
 
+
 def track():
     global annotated_frame
 
-    for annotated_frame, dets in tracking.process_video("videos/belt-test-video_rev.qt"):
-    # for annotated_frame, dets in tracking.process_cam():
+    for annotated_frame, dets in tracking.process_video(
+        "videos/belt-test-video_rev.qt"
+    ):
+        # for annotated_frame, dets in tracking.process_cam():
         if not run:
             return
 

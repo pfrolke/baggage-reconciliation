@@ -20,6 +20,9 @@ error_bag = None
 # Create a Tkinter window
 window = tk.Tk()
 window.title("BagInfo v0.0.1")
+screen_width = window.winfo_screenwidth()
+screen_height = window.winfo_screenheight()
+window.geometry(f"{screen_width // 2}x{screen_height // 4}+{screen_width // 2}+0")
 COLUMNS = ("BagId", "Class", "Status", "ULD")
 table = ttk.Treeview(window, columns=COLUMNS)
 uld_closing = {"one": 0, "two": 0}
@@ -145,8 +148,8 @@ for i, col in enumerate(COLUMNS):
 table.tag_configure("error", background="orange")
 table.tag_configure("success", background="green")
 
-table.insert("", "end", values=(1, "ECO", BagStatus.OFF_BELT, ""))
-off_belt.append(1)
+# table.insert("", "end", values=(1, "ECO", BagStatus.OFF_BELT, ""))
+# off_belt.append(1)
 
 table.pack()
 
