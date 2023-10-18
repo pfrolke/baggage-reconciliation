@@ -14,7 +14,7 @@ class BagStatus:
 
 
 off_belt = []
-
+closed = []
 
 # Create a Tkinter window
 window = tk.Tk()
@@ -36,6 +36,9 @@ def scan():
     content = request.get_json()
     cartid = content["cart"]
 
+    if cartid in closed:
+        return "ULD closed", 200
+
     uld_closing = {id: 0 if id != cartid else uld_closing[cartid] for id in uld_closing}
 
     if not off_belt:
@@ -44,15 +47,15 @@ def scan():
         if uld_closing[cartid] < 3:
             return f"ULD closing {uld_closing[cartid]}/3", 200
 
-        uld_closing[cartid] = 0
         update_uld_status(cartid, "ULD closed")
+        closed.append(cartid)
         return "ULD closed", 200
 
     uld_closing[cartid] = 0
 
     bagId = off_belt.pop()
 
-    res = get_bag_row(bagId)
+    res = get_row(bagId)
     if res is None:
         return "Bag not found", 400
 
@@ -64,6 +67,7 @@ def scan():
         table.item(row, tags=("error"))
         return "INCORRECT CART", 200
 
+    table.item(row, tags=("success"))
     return "SUCCESS", 200
 
 
@@ -79,7 +83,7 @@ def bag():
         return "OK", 200
 
     elif action == "off-belt":
-        ret = get_bag_row(bagId)
+        ret = get_row(bagId)
 
         if ret is None:
             return "Bag not found", 400
@@ -93,22 +97,27 @@ def bag():
     return "Invalid action", 400
 
 
-def get_bag_row(bagId):
+def get_row(bagId=None, uld=None):
     for row in table.get_children():
         values = table.item(row, "values")
 
-        if int(values[0]) == bagId:
-            return row, values
+        if bagId is not None and int(values[0]) != bagId:
+            continue
+
+        if uld is not None and values[3] != uld:
+            continue
+
+        return row, values
 
     return None
 
 
-def update_uld_status(ULD, status):
+def update_uld_status(uld, status):
     for row in table.get_children():
         values = table.item(row, "values")
 
-        if values[3] == ULD:
-            table.item(row, values=(values[0], values[1], status, ULD))
+        if values[3] == uld:
+            table.item(row, values=(values[0], values[1], status, uld))
 
 
 def run_server():
@@ -123,6 +132,7 @@ for i, col in enumerate(COLUMNS):
     table.column("#" + str(i + 1), anchor="center")
 
 table.tag_configure("error", background="orange")
+table.tag_configure("success", background="green")
 
 table.pack()
 
