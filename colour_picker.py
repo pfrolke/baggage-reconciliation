@@ -13,7 +13,14 @@ NUM_CLUSTERS = 5
 
 def colour_picker(img):
     if img.shape[0] > 0 and img.shape[1] > 0:
-        img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        b = clahe.apply(img[:, :, 0])
+        g = clahe.apply(img[:, :, 1])
+        r = clahe.apply(img[:, :, 2])
+        equalized = np.dstack((r, g, b))
+        
+        img = Image.fromarray(equalized)
         img = img.resize((150, 150))  # optional, to reduce time
         img = img.convert("HSV")
         ar = np.asarray(img)
@@ -26,6 +33,7 @@ def colour_picker(img):
 
         index_max = np.argmax(counts)  # find most frequent
         peak = tuple(codes[index_max])
+        peak = tuple([int(value) for value in peak])
         # colour = binascii.hexlify(bytearray(int(c) for c in peak)).decode('ascii')
 
     else:

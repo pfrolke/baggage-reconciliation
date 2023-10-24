@@ -159,13 +159,13 @@ def update_bags(xyxy, pred_bag_ids):
                     int(x1) : int(min(x2, annotated_frame.shape[1])),
                 ]
             )
-
+            
             bag_type = "TEMP"
 
             if peak_colour is not None:
-                if params.YELLOW_LOWER[0] <= peak_colour[0] <= params.YELLOW_UPPER[0]:
+                if peak_colour in params.YELLOW:
                     bag_type = "PRIO"
-                elif params.BROWN_LOWER[0] <= peak_colour[0] <= params.BROWN_UPPER[0]:
+                elif peak_colour in params.BROWN:
                     bag_type = "ECO"
                 else:
                     bag_type = "TRF"
@@ -192,13 +192,13 @@ def update_bags(xyxy, pred_bag_ids):
                     int(x1) : int(min(x2, annotated_frame.shape[1])),
                 ]
             )
-
+            print(peak_colour)
             bag_type = "TEMP"
 
             if peak_colour is not None:
-                if params.YELLOW_LOWER[0] <= peak_colour[0] <= params.YELLOW_UPPER[0]:
+                if peak_colour in params.YELLOW:
                     bag_type = "PRIO"
-                elif params.BROWN_LOWER[0] <= peak_colour[0] <= params.BROWN_UPPER[0]:
+                elif peak_colour in params.BROWN:
                     bag_type = "ECO"
                 else:
                     bag_type = "TRF"
