@@ -151,10 +151,12 @@ def update_bags(xyxy, pred_bag_ids):
             bags[bag_id].size = size
 
         elif bag_id in bags and bags[bag_id].bag_type == "TEMP":
+            print("x:", min((x2 - x1), annotated_frame.shape[0]))
+            print("y:", min((y2 - y1), annotated_frame.shape[1]))
             peak_colour = colour_picker.colour_picker(
                 annotated_frame[
-                    int(y1) : int(min((y2 - y1), annotated_frame.shape[1])),
-                    int(x1) : int(min((x2 - x1), annotated_frame.shape[0])),
+                    int(y1) : int(min(y2, annotated_frame.shape[0])),
+                    int(x1) : int(min(x2, annotated_frame.shape[1])),
                 ]
             )
 
@@ -186,8 +188,8 @@ def update_bags(xyxy, pred_bag_ids):
         else:
             peak_colour = colour_picker.colour_picker(
                 annotated_frame[
-                    int(y1) : int(min((y2 - y1), annotated_frame.shape[1])),
-                    int(x1) : int(min((x2 - x1), annotated_frame.shape[0])),
+                    int(y1) : int(min(y2, annotated_frame.shape[0])),
+                    int(x1) : int(min(x2, annotated_frame.shape[1])),
                 ]
             )
 
