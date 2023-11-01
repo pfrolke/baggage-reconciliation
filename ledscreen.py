@@ -7,6 +7,7 @@ import cv2
 import requests
 import math
 
+
 class Bag:
     def __init__(self, pos, size, bag_type, colour, visible=True):
         self.pos = pos
@@ -218,10 +219,8 @@ def update_bags(xyxy, pred_bag_ids):
 def track():
     global annotated_frame
 
-    for annotated_frame, dets in tracking.process_video(
-        "videos/belt-test-video_rev.qt"
-    ):
-        # for annotated_frame, dets in tracking.process_cam():
+    # for annotated_frame, dets in tracking.process_video("videos/belt-test-video_rev.qt"):
+    for annotated_frame, dets in tracking.process_cam():
         if not run:
             return
 

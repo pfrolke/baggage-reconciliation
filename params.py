@@ -16,7 +16,7 @@ FONT_SIZE = 32
 ALLOWED_MISSED_FRAMES = 10
 MINIMUM_DETECTED_FRAMES = 20
 
-DISTORTION_FACTOR = 900
+DISTORTION_FACTOR = 90
 
 BROWN_LOWER = np.array([0, 0, 0])
 BROWN_UPPER = np.array([30, 255, 255])
@@ -33,4 +33,4 @@ YELLOW = list(itertools.product(list(range(YELLOW_LOWER[0], YELLOW_UPPER[0])),
 SERVER_PORT = 6969
 HOST = "http://localhost"
 
-SEGREGATION = {"one": "PRIO", "two": "ECO"}
+SEGREGATION = {"one": ["PRIO"], "two": ["TRF", "ECO"]}

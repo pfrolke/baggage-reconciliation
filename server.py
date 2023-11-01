@@ -77,8 +77,8 @@ def uld():
 
     uld_closing[cartid] += 1
 
-    if uld_closing[cartid] < 3:
-        return f"ULD closing {uld_closing[cartid]}/3", 200
+    if uld_closing[cartid] < 2:
+        return f"ULD closing {uld_closing[cartid]}/2", 200
 
     update_uld_status(cartid, "ULD closed")
     closed.append(cartid)
@@ -151,7 +151,23 @@ table.tag_configure("success", background="green")
 # table.insert("", "end", values=(1, "ECO", BagStatus.OFF_BELT, ""))
 # off_belt.append(1)
 
+
+def reset():
+    table.delete(*table.get_children())
+    off_belt.clear()
+    closed.clear()
+
+    global error_bag
+    error_bag = None
+
+    global uld_closing
+    uld_closing = {id: 0 for id in uld_closing}
+
+
+reset_button = tk.Button(window, text="Reset", command=reset)
+
 table.pack()
+reset_button.pack()
 
 window.mainloop()
 
